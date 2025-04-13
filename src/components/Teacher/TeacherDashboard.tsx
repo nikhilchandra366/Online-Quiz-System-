@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useQuiz } from "@/context/QuizContext";
 import { useAuth } from "@/context/AuthContext";
@@ -24,16 +25,34 @@ const TeacherDashboard: React.FC = () => {
   const [quizToShare, setQuizToShare] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     const loadData = async () => {
       console.log("TeacherDashboard: Loading data, user:", user);
       setIsLoading(true);
+      setError(null);
       try {
+        if (!user) {
+          console.log("TeacherDashboard: No user available");
+          setIsLoading(false);
+          return;
+        }
+        
+        if (user.role !== 'teacher') {
+          console.log("TeacherDashboard: User is not a teacher", user.role);
+          setError("You must be logged in as a teacher to view this page");
+          setIsLoading(false);
+          return;
+        }
+        
+        console.log("TeacherDashboard: Calling fetchQuizzes");
         await fetchQuizzes();
+        console.log("TeacherDashboard: fetchQuizzes completed");
+        setIsLoading(false);
       } catch (error) {
         console.error("Error fetching quizzes:", error);
-      } finally {
+        setError("Failed to load quizzes. Please try again.");
         setIsLoading(false);
       }
     };
@@ -62,9 +81,24 @@ const TeacherDashboard: React.FC = () => {
   };
 
   const handleConfirmDelete = async (id: string) => {
-    await deleteQuiz(id);
-    setDeleteConfirmId(null);
+    try {
+      setIsLoading(true);
+      await deleteQuiz(id);
+      setDeleteConfirmId(null);
+    } catch (err) {
+      console.error("Error deleting quiz:", err);
+    } finally {
+      setIsLoading(false);
+    }
   };
+
+  if (error) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p className="text-red-500">{error}</p>
+      </div>
+    );
+  }
 
   if (isLoading) {
     return (

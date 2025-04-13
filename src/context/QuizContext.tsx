@@ -1,3 +1,4 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -64,9 +65,13 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   // Fetch quizzes from Supabase
   const fetchQuizzes = async () => {
-    if (!user) return;
+    if (!user) {
+      console.log("QuizContext: No user, skipping quiz fetch");
+      return;
+    }
 
     try {
+      console.log("QuizContext: Fetching quizzes for user", user.id, "with role", user.role);
       let query;
       if (user.role === 'teacher') {
         // Teachers see all their quizzes
@@ -113,10 +118,12 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await query;
 
       if (error) {
+        console.error('Error fetching quizzes:', error);
         throw error;
       }
 
       if (data) {
+        console.log("QuizContext: Received quiz data", data);
         // Transform the data to match our expected format
         const transformedQuizzes: Quiz[] = data.map((quiz: any) => ({
           id: quiz.id,
@@ -135,6 +142,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         setQuizzes(transformedQuizzes);
+        console.log("QuizContext: Transformed quizzes set", transformedQuizzes);
       }
     } catch (error: any) {
       console.error('Error fetching quizzes:', error);
@@ -203,6 +211,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         }));
 
         setAttempts(transformedAttempts);
+        console.log("QuizContext: Attempts fetched and transformed", transformedAttempts);
       }
     } catch (error: any) {
       console.error('Error fetching attempts:', error);
@@ -219,11 +228,16 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (user) {
       console.log("QuizContext: User changed, fetching quizzes", user);
       fetchQuizzes();
+    } else {
+      console.log("QuizContext: No user available, clearing quizzes");
+      setQuizzes([]);
+      setAttempts([]);
     }
   }, [user]);
 
   useEffect(() => {
     if (quizzes.length > 0 && user) {
+      console.log("QuizContext: Quizzes loaded, fetching attempts");
       fetchAttempts();
     }
   }, [quizzes, user]);

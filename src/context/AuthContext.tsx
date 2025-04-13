@@ -1,10 +1,9 @@
+
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
-import { AppUser } from "@/types/quiz";
-
-type UserRole = "teacher" | "student";
+import { AppUser, UserRole } from "@/types/quiz";
 
 interface AuthContextType {
   user: AppUser | null;
@@ -67,11 +66,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 
                 if (data) {
                   console.log("Profile data received:", data);
-                  setUser(prev => ({ 
-                    ...prev!, 
-                    name: data.name,
-                    role: data.role as UserRole 
-                  }));
+                  // Ensure role is valid
+                  const userRole = data.role as UserRole;
+                  if (userRole !== 'teacher' && userRole !== 'student') {
+                    console.error('Invalid user role:', data.role);
+                  }
+                  
+                  setUser(prev => {
+                    if (!prev) return null;
+                    return { 
+                      ...prev, 
+                      name: data.name,
+                      role: userRole
+                    };
+                  });
                 }
               } catch (error) {
                 console.error('Error fetching user data:', error);
@@ -115,11 +123,20 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             
             if (data) {
               console.log("Profile data received:", data);
-              setUser(prev => ({ 
-                ...prev!, 
-                name: data.name,
-                role: data.role as UserRole 
-              }));
+              // Ensure role is valid
+              const userRole = data.role as UserRole;
+              if (userRole !== 'teacher' && userRole !== 'student') {
+                console.error('Invalid user role:', data.role);
+              }
+              
+              setUser(prev => {
+                if (!prev) return null;
+                return { 
+                  ...prev, 
+                  name: data.name,
+                  role: userRole
+                };
+              });
             }
             
             setIsLoading(false);
