@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useQuiz } from "@/context/QuizContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
@@ -19,11 +19,22 @@ import {
 import { Input } from "@/components/ui/input";
 
 const TeacherDashboard: React.FC = () => {
-  const { quizzes, deleteQuiz, getQuizAttempts } = useQuiz();
+  const { quizzes, deleteQuiz, getQuizAttempts, fetchQuizzes } = useQuiz();
   const { user } = useAuth();
   const navigate = useNavigate();
   const [quizToShare, setQuizToShare] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      await fetchQuizzes();
+      setIsLoading(false);
+    };
+    
+    loadData();
+  }, [fetchQuizzes]);
 
   // Filter quizzes created by the current teacher
   const teacherQuizzes = quizzes.filter(quiz => quiz.createdBy === user?.id);
@@ -40,13 +51,13 @@ const TeacherDashboard: React.FC = () => {
     navigate(`/quiz-results/${quizId}`);
   };
 
-  const handleConfirmDelete = (id: string) => {
-    deleteQuiz(id);
+  const handleConfirmDelete = async (id: string) => {
+    await deleteQuiz(id);
     setDeleteConfirmId(null);
   };
 
-  const getAttemptStats = (quizId: string) => {
-    const attempts = getQuizAttempts(quizId);
+  const getAttemptStats = async (quizId: string) => {
+    const attempts = await getQuizAttempts(quizId);
     const completedAttempts = attempts.filter(a => a.completedAt !== null);
     const avgScore = completedAttempts.length > 0
       ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
@@ -58,6 +69,14 @@ const TeacherDashboard: React.FC = () => {
       avgScore: Math.round(avgScore)
     };
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p>Loading your quizzes...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
@@ -84,7 +103,17 @@ const TeacherDashboard: React.FC = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teacherQuizzes.map((quiz) => {
-            const stats = getAttemptStats(quiz.id);
+            // Use a state object to store stats
+            const [stats, setStats] = useState({
+              total: 0,
+              completed: 0,
+              avgScore: 0
+            });
+            
+            // Fetch stats when card renders
+            useEffect(() => {
+              getAttemptStats(quiz.id).then(setStats);
+            }, [quiz.id]);
             
             return (
               <Card key={quiz.id} className="overflow-hidden">
