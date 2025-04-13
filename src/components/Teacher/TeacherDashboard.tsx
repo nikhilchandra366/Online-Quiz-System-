@@ -17,6 +17,7 @@ import {
   DialogTrigger
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const TeacherDashboard: React.FC = () => {
   const { quizzes, deleteQuiz, getQuizAttempts, fetchQuizzes } = useQuiz();
@@ -26,43 +27,60 @@ const TeacherDashboard: React.FC = () => {
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [initialLoadDone, setInitialLoadDone] = useState(false);
 
   useEffect(() => {
+    let isMounted = true;
+    
     const loadData = async () => {
       console.log("TeacherDashboard: Loading data, user:", user);
-      setIsLoading(true);
-      setError(null);
-      try {
-        if (!user) {
-          console.log("TeacherDashboard: No user available");
+      
+      if (!isMounted) return;
+      
+      if (!user) {
+        console.log("TeacherDashboard: No user available");
+        if (isMounted) {
           setIsLoading(false);
-          return;
+          setInitialLoadDone(true);
         }
-        
-        if (user.role !== 'teacher') {
-          console.log("TeacherDashboard: User is not a teacher", user.role);
+        return;
+      }
+      
+      if (user.role !== 'teacher') {
+        console.log("TeacherDashboard: User is not a teacher", user.role);
+        if (isMounted) {
           setError("You must be logged in as a teacher to view this page");
           setIsLoading(false);
-          return;
+          setInitialLoadDone(true);
         }
-        
+        return;
+      }
+      
+      try {
         console.log("TeacherDashboard: Calling fetchQuizzes");
         await fetchQuizzes();
         console.log("TeacherDashboard: fetchQuizzes completed");
-        setIsLoading(false);
+        
+        if (isMounted) {
+          setIsLoading(false);
+          setInitialLoadDone(true);
+        }
       } catch (error) {
         console.error("Error fetching quizzes:", error);
-        setError("Failed to load quizzes. Please try again.");
-        setIsLoading(false);
+        if (isMounted) {
+          setError("Failed to load quizzes. Please try again.");
+          setIsLoading(false);
+          setInitialLoadDone(true);
+        }
       }
     };
     
     loadData();
+    
+    return () => {
+      isMounted = false;
+    };
   }, [fetchQuizzes, user]);
-
-  console.log("TeacherDashboard: Current quizzes:", quizzes);
-  console.log("TeacherDashboard: Current user:", user);
-  console.log("TeacherDashboard: Loading state:", isLoading);
 
   // Filter quizzes created by the current teacher
   const teacherQuizzes = user ? quizzes.filter(quiz => quiz.createdBy === user.id) : [];
@@ -100,13 +118,39 @@ const TeacherDashboard: React.FC = () => {
     );
   }
 
-  if (isLoading) {
-    return (
-      <div className="flex justify-center items-center h-64">
-        <p>Loading your quizzes...</p>
-      </div>
-    );
-  }
+  // Create a skeleton loader for quizzes
+  const QuizSkeletons = () => (
+    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+      {[1, 2, 3].map((i) => (
+        <Card key={i} className="overflow-hidden">
+          <CardHeader className="pb-3">
+            <Skeleton className="h-6 w-3/4 mb-2" />
+            <Skeleton className="h-4 w-5/6" />
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {[1, 2, 3, 4].map((j) => (
+                <div key={j} className="flex items-center justify-between">
+                  <Skeleton className="h-4 w-1/3" />
+                  <Skeleton className="h-4 w-1/4" />
+                </div>
+              ))}
+            </div>
+          </CardContent>
+          <CardFooter className="border-t pt-4 flex justify-between">
+            <div className="flex space-x-2">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-8 w-8 rounded" />
+            </div>
+            <div className="flex space-x-2">
+              <Skeleton className="h-8 w-8 rounded" />
+              <Skeleton className="h-8 w-8 rounded" />
+            </div>
+          </CardFooter>
+        </Card>
+      ))}
+    </div>
+  );
 
   return (
     <div className="space-y-6">
@@ -118,7 +162,10 @@ const TeacherDashboard: React.FC = () => {
         </Button>
       </div>
 
-      {teacherQuizzes.length === 0 ? (
+      {/* Show skeletons only during initial load */}
+      {!initialLoadDone && isLoading ? (
+        <QuizSkeletons />
+      ) : teacherQuizzes.length === 0 ? (
         <Card className="text-center p-8">
           <CardContent className="pt-6">
             <p className="text-lg text-muted-foreground mb-4">
