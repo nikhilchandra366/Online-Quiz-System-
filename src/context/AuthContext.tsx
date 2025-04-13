@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
@@ -34,38 +33,53 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
 
   useEffect(() => {
+    console.log("AuthProvider: Setting up auth state listener");
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
+        console.log("AuthStateChange event:", event);
         setSession(currentSession);
-        setUser(currentSession?.user ? { ...currentSession.user } as AppUser : null);
         
-        if (currentSession?.user && event === 'SIGNED_IN') {
-          // Fetch user profile data
-          setTimeout(async () => {
-            try {
-              const { data, error } = await supabase
-                .from('profiles')
-                .select('name, role')
-                .eq('id', currentSession.user.id)
-                .single();
+        if (currentSession?.user) {
+          // First set basic user info
+          const initialUser: AppUser = {
+            ...currentSession.user,
+            role: undefined,
+            name: undefined
+          };
+          setUser(initialUser);
+          
+          if (event === 'SIGNED_IN') {
+            // Fetch user profile data
+            setTimeout(async () => {
+              try {
+                console.log("Fetching user profile data");
+                const { data, error } = await supabase
+                  .from('profiles')
+                  .select('name, role')
+                  .eq('id', currentSession.user.id)
+                  .single();
+                  
+                if (error) {
+                  console.error('Error fetching user profile:', error);
+                  return;
+                }
                 
-              if (error) {
-                console.error('Error fetching user profile:', error);
-                return;
+                if (data) {
+                  console.log("Profile data received:", data);
+                  setUser(prev => ({ 
+                    ...prev!, 
+                    name: data.name,
+                    role: data.role as UserRole 
+                  }));
+                }
+              } catch (error) {
+                console.error('Error fetching user data:', error);
               }
-              
-              if (data) {
-                setUser(prev => ({ 
-                  ...prev!, 
-                  name: data.name,
-                  role: data.role as UserRole 
-                }));
-              }
-            } catch (error) {
-              console.error('Error fetching user data:', error);
-            }
-          }, 0);
+            }, 0);
+          }
+        } else {
+          setUser(null);
         }
         
         setIsLoading(false);
@@ -74,10 +88,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     // Check for existing session
     supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("AuthProvider: Checking for existing session");
       setSession(currentSession);
       
       if (currentSession?.user) {
-        setUser({ ...currentSession.user } as AppUser);
+        // First set basic user info
+        const initialUser: AppUser = {
+          ...currentSession.user,
+          role: undefined,
+          name: undefined
+        };
+        setUser(initialUser);
         
         // Fetch user profile data
         supabase
@@ -88,10 +109,12 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .then(({ data, error }) => {
             if (error) {
               console.error('Error fetching user profile:', error);
+              setIsLoading(false);
               return;
             }
             
             if (data) {
+              console.log("Profile data received:", data);
               setUser(prev => ({ 
                 ...prev!, 
                 name: data.name,
@@ -189,7 +212,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     <AuthContext.Provider
       value={{
         user,
-        isAuthenticated: !!user,
+        isAuthenticated: !!user && !!user.role,
         isLoading,
         login,
         logout,

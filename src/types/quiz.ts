@@ -30,7 +30,9 @@ export interface QuizAttempt {
   score: number | null;
 }
 
+export type UserRole = "teacher" | "student";
+
 export interface AppUser extends User {
-  role?: 'teacher' | 'student';
+  role?: UserRole;
   name?: string;
 }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useQuiz } from "@/context/QuizContext";
 import { useAuth } from "@/context/AuthContext";
@@ -28,16 +27,27 @@ const TeacherDashboard: React.FC = () => {
 
   useEffect(() => {
     const loadData = async () => {
+      console.log("TeacherDashboard: Loading data, user:", user);
       setIsLoading(true);
-      await fetchQuizzes();
-      setIsLoading(false);
+      try {
+        await fetchQuizzes();
+      } catch (error) {
+        console.error("Error fetching quizzes:", error);
+      } finally {
+        setIsLoading(false);
+      }
     };
     
     loadData();
-  }, [fetchQuizzes]);
+  }, [fetchQuizzes, user]);
+
+  console.log("TeacherDashboard: Current quizzes:", quizzes);
+  console.log("TeacherDashboard: Current user:", user);
+  console.log("TeacherDashboard: Loading state:", isLoading);
 
   // Filter quizzes created by the current teacher
-  const teacherQuizzes = quizzes.filter(quiz => quiz.createdBy === user?.id);
+  const teacherQuizzes = user ? quizzes.filter(quiz => quiz.createdBy === user.id) : [];
+  console.log("TeacherDashboard: Filtered quizzes:", teacherQuizzes);
 
   const handleCreateQuiz = () => {
     navigate("/create-quiz");
@@ -54,20 +64,6 @@ const TeacherDashboard: React.FC = () => {
   const handleConfirmDelete = async (id: string) => {
     await deleteQuiz(id);
     setDeleteConfirmId(null);
-  };
-
-  const getAttemptStats = async (quizId: string) => {
-    const attempts = await getQuizAttempts(quizId);
-    const completedAttempts = attempts.filter(a => a.completedAt !== null);
-    const avgScore = completedAttempts.length > 0
-      ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
-      : 0;
-    
-    return {
-      total: attempts.length,
-      completed: completedAttempts.length,
-      avgScore: Math.round(avgScore)
-    };
   };
 
   if (isLoading) {
@@ -112,7 +108,25 @@ const TeacherDashboard: React.FC = () => {
             
             // Fetch stats when card renders
             useEffect(() => {
-              getAttemptStats(quiz.id).then(setStats);
+              const fetchStats = async () => {
+                try {
+                  const attempts = getQuizAttempts(quiz.id);
+                  const completedAttempts = attempts.filter(a => a.completedAt !== null);
+                  const avgScore = completedAttempts.length > 0
+                    ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
+                    : 0;
+                  
+                  setStats({
+                    total: attempts.length,
+                    completed: completedAttempts.length,
+                    avgScore: Math.round(avgScore)
+                  });
+                } catch (error) {
+                  console.error("Error fetching stats:", error);
+                }
+              };
+
+              fetchStats();
             }, [quiz.id]);
             
             return (

@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -17,8 +16,8 @@ interface QuizContextType {
     attemptId: string,
     answers: { questionId: string; selectedOption: number }[]
   ) => Promise<void>;
-  getStudentAttempts: (studentId: string) => Promise<QuizAttempt[]>;
-  getQuizAttempts: (quizId: string) => Promise<QuizAttempt[]>;
+  getStudentAttempts: (studentId: string) => QuizAttempt[];
+  getQuizAttempts: (quizId: string) => QuizAttempt[];
   generateQuizCode: () => string;
   fetchQuizzes: () => Promise<void>;
   fetchAttempts: () => Promise<void>;
@@ -218,6 +217,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   // Load data when component mounts or user changes
   useEffect(() => {
     if (user) {
+      console.log("QuizContext: User changed, fetching quizzes", user);
       fetchQuizzes();
     }
   }, [user]);
@@ -526,11 +526,11 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const getStudentAttempts = async (studentId: string): Promise<QuizAttempt[]> => {
+  const getStudentAttempts = (studentId: string): QuizAttempt[] => {
     return attempts.filter(a => a.studentId === studentId);
   };
 
-  const getQuizAttempts = async (quizId: string): Promise<QuizAttempt[]> => {
+  const getQuizAttempts = (quizId: string): QuizAttempt[] => {
     return attempts.filter(a => a.quizId === quizId);
   };
 
