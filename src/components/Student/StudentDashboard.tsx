@@ -1,29 +1,26 @@
 
 import React, { useState } from "react";
-import { useQuiz } from "@/context/QuizContext";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
+import { useQuiz } from "@/context/QuizContext";
+import { useToast } from "@/hooks/use-toast";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { Search, Clock, CheckCircle2, AlertCircle } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { useNavigate } from "react-router-dom";
-import { useToast } from "@/components/ui/use-toast";
-import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BookOpen, Clock, Award, ArrowRight, CheckCircle } from "lucide-react";
 
-const StudentDashboard: React.FC = () => {
+const StudentDashboard = () => {
   const [quizCode, setQuizCode] = useState("");
-  const { getQuizByCode, getStudentAttempts } = useQuiz();
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const { getQuizByCode, startQuizAttempt, attempts, quizzes } = useQuiz();
   const { toast } = useToast();
+  const navigate = useNavigate();
 
-  const attempts = user ? getStudentAttempts(user.id) : [];
-  const completedAttempts = attempts.filter(a => a.completedAt !== null);
-  const inProgressAttempts = attempts.filter(a => a.completedAt === null);
-
-  const handleJoinQuiz = () => {
+  // Handle quiz code submission
+  const handleSubmitCode = (e: React.FormEvent) => {
+    e.preventDefault();
+    
     if (!quizCode.trim()) {
       toast({
         title: "Error",
@@ -32,205 +29,174 @@ const StudentDashboard: React.FC = () => {
       });
       return;
     }
-
-    const quiz = getQuizByCode(quizCode);
-    if (!quiz) {
+    
+    const quiz = getQuizByCode(quizCode.trim());
+    
+    if (quiz) {
+      // Navigate to quiz intro page
+      navigate(`/quiz/${quiz.id}`);
+    } else {
       toast({
-        title: "Quiz not found",
-        description: "The quiz code you entered doesn't exist or is not published.",
+        title: "Invalid Quiz Code",
+        description: "No active quiz found with this code. Please check and try again.",
         variant: "destructive",
       });
-      return;
     }
-
-    // Check if there's already an in-progress attempt
-    const existingAttempt = inProgressAttempts.find(a => a.quizId === quiz.id);
-    if (existingAttempt) {
-      navigate(`/take-quiz/${existingAttempt.id}`);
-      return;
-    }
-
-    navigate(`/quiz/${quiz.id}`);
   };
 
-  const handleContinueAttempt = (attemptId: string) => {
-    navigate(`/take-quiz/${attemptId}`);
-  };
-
-  const handleViewResults = (attemptId: string) => {
-    navigate(`/attempt-results/${attemptId}`);
-  };
+  // Get student's attempts
+  const studentAttempts = attempts.filter(attempt => attempt.studentId === user?.id);
+  
+  // Group attempts by completed and in-progress
+  const completedAttempts = studentAttempts.filter(attempt => attempt.completedAt);
+  const inProgressAttempts = studentAttempts.filter(attempt => !attempt.completedAt);
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-bold">Student Dashboard</h1>
-        <p className="text-muted-foreground">Take quizzes and view your results</p>
+        <h1 className="text-3xl font-bold">Welcome, {user?.name}!</h1>
+        <p className="text-muted-foreground">Access your quizzes and see your results.</p>
+      </div>
+      
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <BookOpen className="h-5 w-5 text-primary" />
+              <CardTitle>Available Quizzes</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{quizzes.filter(q => q.isPublished).length}</p>
+            <p className="text-sm text-muted-foreground">Enter a quiz code to start</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Clock className="h-5 w-5 text-primary" />
+              <CardTitle>In Progress</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{inProgressAttempts.length}</p>
+            <p className="text-sm text-muted-foreground">Quizzes you've started</p>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardHeader className="pb-3">
+            <div className="flex items-center gap-2">
+              <Award className="h-5 w-5 text-primary" />
+              <CardTitle>Completed</CardTitle>
+            </div>
+          </CardHeader>
+          <CardContent>
+            <p className="text-2xl font-bold">{completedAttempts.length}</p>
+            <p className="text-sm text-muted-foreground">Quizzes you've finished</p>
+          </CardContent>
+        </Card>
       </div>
       
       <Card>
         <CardHeader>
-          <CardTitle>Join a Quiz</CardTitle>
-          <CardDescription>
-            Enter the quiz code provided by your teacher to start taking a quiz
-          </CardDescription>
+          <CardTitle>Enter Quiz Code</CardTitle>
+          <CardDescription>Enter the code provided by your teacher to access the quiz</CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="flex space-x-2">
-            <Input
-              placeholder="Enter quiz code (e.g., ABC123)"
+          <form onSubmit={handleSubmitCode} className="flex gap-2">
+            <Input 
+              placeholder="Enter quiz code (e.g., MATH01)" 
               value={quizCode}
               onChange={(e) => setQuizCode(e.target.value.toUpperCase())}
+              className="uppercase"
               maxLength={6}
-              className="font-mono uppercase"
             />
-            <Button onClick={handleJoinQuiz}>
-              <Search className="h-4 w-4 mr-2" />
-              Join Quiz
-            </Button>
-          </div>
+            <Button type="submit">Start Quiz</Button>
+          </form>
         </CardContent>
       </Card>
-
+      
       <Tabs defaultValue="in-progress" className="w-full">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid grid-cols-2 mb-4">
           <TabsTrigger value="in-progress">In Progress</TabsTrigger>
           <TabsTrigger value="completed">Completed</TabsTrigger>
         </TabsList>
-
+        
         <TabsContent value="in-progress">
-          {inProgressAttempts.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <Clock className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-lg font-medium">No quizzes in progress</p>
-                  <p className="text-muted-foreground">
-                    Enter a quiz code above to start taking a quiz
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {inProgressAttempts.map((attempt) => {
+          {inProgressAttempts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {inProgressAttempts.map(attempt => {
                 const quiz = quizzes.find(q => q.id === attempt.quizId);
-                if (!quiz) return null;
-                
                 return (
                   <Card key={attempt.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between">
-                        <CardTitle>{quiz.title}</CardTitle>
-                        <Badge variant="outline">In Progress</Badge>
-                      </div>
+                    <CardHeader className="pb-3">
+                      <CardTitle className="truncate">{quiz?.title || "Untitled Quiz"}</CardTitle>
                       <CardDescription>
-                        Started on {new Date(attempt.startedAt).toLocaleDateString()}
+                        Started {new Date(attempt.startedAt).toLocaleDateString()}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="text-sm text-muted-foreground">
-                          <span>Questions answered: </span>
-                          <span className="font-medium">
-                            {attempt.answers.length}/{quiz.questions.length}
-                          </span>
-                        </div>
-                        <Progress 
-                          value={(attempt.answers.length / quiz.questions.length) * 100} 
-                        />
-                      </div>
+                    <CardContent className="pb-2">
+                      <p className="text-sm text-muted-foreground truncate">{quiz?.description || "No description"}</p>
                     </CardContent>
                     <CardFooter>
                       <Button 
                         className="w-full" 
-                        onClick={() => handleContinueAttempt(attempt.id)}
+                        onClick={() => navigate(`/take-quiz/${attempt.id}`)}
                       >
-                        Continue Quiz
+                        Continue <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
                 );
               })}
             </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No quizzes in progress</p>
+            </div>
           )}
         </TabsContent>
-
+        
         <TabsContent value="completed">
-          {completedAttempts.length === 0 ? (
-            <Card>
-              <CardContent className="p-6 text-center">
-                <div className="flex flex-col items-center justify-center gap-2">
-                  <CheckCircle2 className="h-12 w-12 text-muted-foreground" />
-                  <p className="text-lg font-medium">No completed quizzes</p>
-                  <p className="text-muted-foreground">
-                    Your completed quizzes will appear here
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          ) : (
-            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-              {completedAttempts.map((attempt) => {
+          {completedAttempts.length > 0 ? (
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+              {completedAttempts.map(attempt => {
                 const quiz = quizzes.find(q => q.id === attempt.quizId);
-                if (!quiz) return null;
-                
-                const scorePercentage = attempt.score || 0;
-                
                 return (
                   <Card key={attempt.id}>
-                    <CardHeader className="pb-2">
-                      <div className="flex justify-between">
-                        <CardTitle>{quiz.title}</CardTitle>
-                        <Badge
-                          variant={scorePercentage >= 70 ? "default" : 
-                                  scorePercentage >= 40 ? "secondary" : "outline"}
-                        >
-                          {scorePercentage}%
-                        </Badge>
+                    <CardHeader className="pb-3">
+                      <div className="flex justify-between items-start">
+                        <CardTitle className="truncate">{quiz?.title || "Untitled Quiz"}</CardTitle>
+                        <div className="flex items-center gap-1 text-primary">
+                          <CheckCircle className="h-4 w-4" />
+                          <span className="font-bold">{attempt.score}%</span>
+                        </div>
                       </div>
                       <CardDescription>
-                        Completed on {new Date(attempt.completedAt || "").toLocaleDateString()}
+                        Completed {new Date(attempt.completedAt!).toLocaleDateString()}
                       </CardDescription>
                     </CardHeader>
-                    <CardContent>
-                      <div className="space-y-2">
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Questions:</span>
-                          <span>{quiz.questions.length}</span>
-                        </div>
-                        <div className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">Result:</span>
-                          <span 
-                            className={
-                              scorePercentage >= 70 
-                                ? "text-green-600" 
-                                : scorePercentage >= 40 
-                                ? "text-amber-600" 
-                                : "text-red-600"
-                            }
-                          >
-                            {scorePercentage >= 70 
-                              ? "Passed" 
-                              : scorePercentage >= 40 
-                              ? "Average" 
-                              : "Needs Improvement"}
-                          </span>
-                        </div>
-                      </div>
+                    <CardContent className="pb-2">
+                      <p className="text-sm text-muted-foreground truncate">{quiz?.description || "No description"}</p>
                     </CardContent>
                     <CardFooter>
                       <Button 
                         className="w-full" 
                         variant="outline"
-                        onClick={() => handleViewResults(attempt.id)}
+                        onClick={() => navigate(`/attempt-results/${attempt.id}`)}
                       >
-                        View Results
+                        View Results <ArrowRight className="ml-2 h-4 w-4" />
                       </Button>
                     </CardFooter>
                   </Card>
                 );
               })}
+            </div>
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">No completed quizzes</p>
             </div>
           )}
         </TabsContent>

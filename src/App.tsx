@@ -68,12 +68,10 @@ const RoleRedirect = () => {
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
+    <BrowserRouter>
       <AuthProvider>
-        <QuizProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+        <TooltipProvider>
+          <QuizProvider>
             <Layout>
               <Routes>
                 {/* Public routes */}
@@ -151,10 +149,12 @@ const App = () => (
                 <Route path="*" element={<NotFound />} />
               </Routes>
             </Layout>
-          </BrowserRouter>
-        </QuizProvider>
+            <Toaster />
+            <Sonner />
+          </QuizProvider>
+        </TooltipProvider>
       </AuthProvider>
-    </TooltipProvider>
+    </BrowserRouter>
   </QueryClientProvider>
 );
 
