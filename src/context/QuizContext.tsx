@@ -1,4 +1,3 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
@@ -171,8 +170,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
             started_at,
             completed_at,
             answers,
-            score,
-            profiles:student_id (name)
+            score
           `)
           .in('quiz_id', quizzes.map(q => q.id));
       } else {
@@ -186,8 +184,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
             started_at,
             completed_at,
             answers,
-            score,
-            profiles:student_id (name)
+            score
           `)
           .eq('student_id', user.id);
       }
@@ -195,6 +192,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const { data, error } = await query;
 
       if (error) {
+        console.error('Error fetching attempts:', error);
         throw error;
       }
 
@@ -203,7 +201,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
           id: a.id,
           quizId: a.quiz_id,
           studentId: a.student_id,
-          studentName: a.profiles?.name || "Unknown Student",
+          studentName: "Student",
           startedAt: a.started_at,
           completedAt: a.completed_at,
           answers: a.answers || [],

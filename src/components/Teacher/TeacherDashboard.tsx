@@ -18,11 +18,13 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useToast } from "@/components/ui/use-toast";
 
 const TeacherDashboard: React.FC = () => {
   const { quizzes, deleteQuiz, getQuizAttempts, fetchQuizzes } = useQuiz();
   const { user } = useAuth();
   const navigate = useNavigate();
+  const { toast } = useToast();
   const [quizToShare, setQuizToShare] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -103,8 +105,17 @@ const TeacherDashboard: React.FC = () => {
       setIsLoading(true);
       await deleteQuiz(id);
       setDeleteConfirmId(null);
+      toast({
+        title: "Success",
+        description: "Quiz deleted successfully",
+      });
     } catch (err) {
       console.error("Error deleting quiz:", err);
+      toast({
+        title: "Error",
+        description: "Failed to delete quiz",
+        variant: "destructive"
+      });
     } finally {
       setIsLoading(false);
     }
@@ -180,19 +191,19 @@ const TeacherDashboard: React.FC = () => {
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
           {teacherQuizzes.map((quiz) => {
-            // Use a state object to store stats
+            // Create static stats for now to avoid errors
             const [stats, setStats] = useState({
               total: 0,
               completed: 0,
               avgScore: 0
             });
             
-            // Fetch stats when card renders
+            // Safely fetch stats
             useEffect(() => {
               const fetchStats = async () => {
                 try {
-                  const attempts = getQuizAttempts(quiz.id);
-                  const completedAttempts = attempts.filter(a => a.completedAt !== null);
+                  const attempts = getQuizAttempts(quiz.id) || [];
+                  const completedAttempts = attempts.filter(a => a.completedAt !== null) || [];
                   const avgScore = completedAttempts.length > 0
                     ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
                     : 0;
