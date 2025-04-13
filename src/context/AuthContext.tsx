@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, currentSession) => {
         setSession(currentSession);
-        setUser(currentSession?.user ?? null);
+        setUser(currentSession?.user ? { ...currentSession.user } as AppUser : null);
         
         if (currentSession?.user && event === 'SIGNED_IN') {
           // Fetch user profile data
@@ -77,7 +77,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setSession(currentSession);
       
       if (currentSession?.user) {
-        setUser(currentSession.user);
+        setUser({ ...currentSession.user } as AppUser);
         
         // Fetch user profile data
         supabase

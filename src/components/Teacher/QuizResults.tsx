@@ -9,6 +9,7 @@ import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { QuizAttempt } from "@/types/quiz";
 
 const QuizResults: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
@@ -16,46 +17,64 @@ const QuizResults: React.FC = () => {
   const navigate = useNavigate();
 
   const [quiz, setQuiz] = useState<typeof quizzes[0] | null>(null);
-  const [attempts, setAttempts] = useState<ReturnType<typeof getQuizAttempts>>([]);
+  const [attempts, setAttempts] = useState<QuizAttempt[]>([]);
   const [scoreDistribution, setScoreDistribution] = useState<{name: string, count: number}[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    if (quizId) {
-      const foundQuiz = quizzes.find(q => q.id === quizId);
-      if (foundQuiz) {
-        setQuiz(foundQuiz);
-        const quizAttempts = getQuizAttempts(quizId);
-        // Only include completed attempts
-        const completedAttempts = quizAttempts.filter(a => a.completedAt !== null);
-        setAttempts(completedAttempts);
-        
-        // Calculate score distribution
-        const distribution = [
-          { name: '0-20%', count: 0 },
-          { name: '21-40%', count: 0 },
-          { name: '41-60%', count: 0 },
-          { name: '61-80%', count: 0 },
-          { name: '81-100%', count: 0 },
-        ];
-        
-        completedAttempts.forEach(attempt => {
-          const score = attempt.score || 0;
-          if (score <= 20) distribution[0].count++;
-          else if (score <= 40) distribution[1].count++;
-          else if (score <= 60) distribution[2].count++;
-          else if (score <= 80) distribution[3].count++;
-          else distribution[4].count++;
-        });
-        
-        setScoreDistribution(distribution);
+    async function fetchData() {
+      if (quizId) {
+        const foundQuiz = quizzes.find(q => q.id === quizId);
+        if (foundQuiz) {
+          setQuiz(foundQuiz);
+          try {
+            const quizAttempts = await getQuizAttempts(quizId);
+            // Only include completed attempts
+            const completedAttempts = quizAttempts.filter(a => a.completedAt !== null);
+            setAttempts(completedAttempts);
+            
+            // Calculate score distribution
+            const distribution = [
+              { name: '0-20%', count: 0 },
+              { name: '21-40%', count: 0 },
+              { name: '41-60%', count: 0 },
+              { name: '61-80%', count: 0 },
+              { name: '81-100%', count: 0 },
+            ];
+            
+            completedAttempts.forEach(attempt => {
+              const score = attempt.score || 0;
+              if (score <= 20) distribution[0].count++;
+              else if (score <= 40) distribution[1].count++;
+              else if (score <= 60) distribution[2].count++;
+              else if (score <= 80) distribution[3].count++;
+              else distribution[4].count++;
+            });
+            
+            setScoreDistribution(distribution);
+          } catch (error) {
+            console.error("Error fetching quiz attempts:", error);
+          }
+        }
       }
+      setLoading(false);
     }
+    
+    fetchData();
   }, [quizId, quizzes, getQuizAttempts]);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-64">
+        <p>Loading quiz results...</p>
+      </div>
+    );
+  }
 
   if (!quiz) {
     return (
       <div className="flex justify-center items-center h-64">
-        <p>Loading quiz results...</p>
+        <p>Quiz not found</p>
       </div>
     );
   }

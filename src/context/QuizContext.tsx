@@ -242,7 +242,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       const code = generateCode();
       
       // First, insert the quiz
-      const { data: quizData, error: quizError } = await supabase
+      const { data: insertedQuiz, error: quizError } = await supabase
         .from('quizzes')
         .insert({
           title: quizData.title,
@@ -258,7 +258,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       // Then, insert the questions
       const questionsToInsert = quizData.questions.map((question: QuizQuestion) => ({
-        quiz_id: quizData.id,
+        quiz_id: insertedQuiz.id,
         text: question.text,
         options: question.options,
         correct_answer: question.correctAnswer

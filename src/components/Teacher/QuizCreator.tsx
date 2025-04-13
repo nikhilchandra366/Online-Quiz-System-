@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { useQuiz, type QuizQuestion } from "@/context/QuizContext";
+import { useQuiz } from "@/context/QuizContext";
+import { QuizQuestion } from "@/types/quiz"; 
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";

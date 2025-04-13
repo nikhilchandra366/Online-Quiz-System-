@@ -1,7 +1,8 @@
 
 import React, { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { useQuiz, QuizQuestion } from "@/context/QuizContext";
+import { useQuiz } from "@/context/QuizContext";
+import { QuizQuestion } from "@/types/quiz";
 import { useToast } from "@/hooks/use-toast";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

@@ -18,7 +18,7 @@ const StudentDashboard = () => {
   const navigate = useNavigate();
 
   // Handle quiz code submission
-  const handleSubmitCode = (e: React.FormEvent) => {
+  const handleSubmitCode = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (!quizCode.trim()) {
@@ -30,15 +30,23 @@ const StudentDashboard = () => {
       return;
     }
     
-    const quiz = getQuizByCode(quizCode.trim());
-    
-    if (quiz) {
-      // Navigate to quiz intro page
-      navigate(`/quiz/${quiz.id}`);
-    } else {
+    try {
+      const quiz = await getQuizByCode(quizCode.trim());
+      
+      if (quiz) {
+        // Navigate to quiz intro page
+        navigate(`/quiz/${quiz.id}`);
+      } else {
+        toast({
+          title: "Invalid Quiz Code",
+          description: "No active quiz found with this code. Please check and try again.",
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
-        title: "Invalid Quiz Code",
-        description: "No active quiz found with this code. Please check and try again.",
+        title: "Error",
+        description: "Failed to fetch quiz. Please try again.",
         variant: "destructive",
       });
     }
