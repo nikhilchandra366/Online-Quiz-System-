@@ -51,18 +51,21 @@ export type Database = {
         Row: {
           created_at: string
           id: string
+          metadata: Json | null
           name: string
           role: string
         }
         Insert: {
           created_at?: string
           id: string
+          metadata?: Json | null
           name: string
           role: string
         }
         Update: {
           created_at?: string
           id?: string
+          metadata?: Json | null
           name?: string
           role?: string
         }

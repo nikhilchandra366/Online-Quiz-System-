@@ -57,7 +57,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   .from('profiles')
                   .select('name, role, metadata')
                   .eq('id', currentSession.user.id)
-                  .single();
+                  .maybeSingle(); // Use maybeSingle to handle potential no-data cases
                   
                 if (error) {
                   console.error('Error fetching user profile:', error);
@@ -76,8 +76,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     if (!prev) return null;
                     return { 
                       ...prev, 
-                      name: data.name,
-                      role: userRole,
+                      name: data.name || undefined,
+                      role: userRole || undefined,
                       metadata: data.metadata || {}
                     };
                   });
@@ -114,7 +114,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           .from('profiles')
           .select('name, role, metadata')
           .eq('id', currentSession.user.id)
-          .single()
+          .maybeSingle() // Use maybeSingle to handle potential no-data cases
           .then(({ data, error }) => {
             if (error) {
               console.error('Error fetching user profile:', error);
@@ -134,8 +134,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 if (!prev) return null;
                 return { 
                   ...prev, 
-                  name: data.name,
-                  role: userRole,
+                  name: data.name || undefined,
+                  role: userRole || undefined,
                   metadata: data.metadata || {}
                 };
               });
