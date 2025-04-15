@@ -10,8 +10,19 @@ import { Textarea } from "@/components/ui/textarea";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Trash2, Save, ArrowLeft, FileQuestion } from "lucide-react";
+import { PlusCircle, Trash2, Save, ArrowLeft, FileQuestion, Loader2 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+
+// Helper function to generate a random quiz code
+const generateQuizCode = () => {
+  const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  for (let i = 0; i < 6; i++) {
+    result += characters.charAt(Math.floor(Math.random() * characters.length));
+  }
+  return result;
+};
 
 const QuizCreator: React.FC = () => {
   const { quizId } = useParams<{ quizId: string }>();
@@ -27,6 +38,8 @@ const QuizCreator: React.FC = () => {
   const [description, setDescription] = useState("");
   const [questions, setQuestions] = useState<QuizQuestion[]>([]);
   const [isPublished, setIsPublished] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [quizCode, setQuizCode] = useState("");
 
   useEffect(() => {
     if (existingQuiz) {
@@ -34,6 +47,7 @@ const QuizCreator: React.FC = () => {
       setDescription(existingQuiz.description);
       setQuestions([...existingQuiz.questions]);
       setIsPublished(existingQuiz.isPublished);
+      setQuizCode(existingQuiz.code);
     } else {
       // Initialize with one empty question for new quizzes
       setQuestions([
@@ -44,8 +58,36 @@ const QuizCreator: React.FC = () => {
           correctAnswer: 0,
         },
       ]);
+      
+      // Generate a random quiz code for new quizzes
+      setQuizCode(generateQuizCode());
     }
   }, [existingQuiz]);
+
+  // Check if the quiz code is unique
+  const checkQuizCodeUniqueness = async (code: string): Promise<boolean> => {
+    if (isEditing && existingQuiz?.code === code) {
+      return true; // Same code for the same quiz is fine
+    }
+    
+    try {
+      const { data, error } = await supabase
+        .from('quizzes')
+        .select('id')
+        .eq('code', code)
+        .maybeSingle();
+        
+      if (error) {
+        console.error('Error checking quiz code uniqueness:', error);
+        return false;
+      }
+      
+      return !data; // If no data, code is unique
+    } catch (error) {
+      console.error('Error checking quiz code uniqueness:', error);
+      return false;
+    }
+  };
 
   const handleAddQuestion = () => {
     setQuestions([
@@ -92,12 +134,32 @@ const QuizCreator: React.FC = () => {
     setQuestions(newQuestions);
   };
 
+  const handleQuizCodeChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value.toUpperCase();
+    if (value.length <= 6) {
+      setQuizCode(value);
+    }
+  };
+
+  const regenerateQuizCode = () => {
+    setQuizCode(generateQuizCode());
+  };
+
   const handleSubmit = async () => {
     // Validate quiz data
     if (!title.trim()) {
       toast({
         title: "Missing title",
         description: "Please provide a title for your quiz",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!quizCode.trim() || quizCode.length < 4) {
+      toast({
+        title: "Invalid quiz code",
+        description: "Please provide a valid quiz code (at least 4 characters)",
         variant: "destructive",
       });
       return;
@@ -129,34 +191,62 @@ const QuizCreator: React.FC = () => {
       }
     }
 
-    if (isEditing && existingQuiz) {
-      updateQuiz(existingQuiz.id, {
-        title,
-        description,
-        questions,
-        isPublished,
-      });
-      toast({
-        title: "Quiz updated",
-        description: "Your quiz has been successfully updated",
-      });
-    } else {
-      if (!user) return;
+    setIsSubmitting(true);
+
+    try {
+      // Check if quiz code is unique
+      const isCodeUnique = await checkQuizCodeUniqueness(quizCode);
       
-      createQuiz({
-        title,
-        description,
-        createdBy: user.id,
-        questions,
-        isPublished,
-      });
+      if (!isCodeUnique) {
+        toast({
+          title: "Quiz code already exists",
+          description: "Please choose a different quiz code or generate a new one",
+          variant: "destructive",
+        });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (isEditing && existingQuiz) {
+        updateQuiz(existingQuiz.id, {
+          title,
+          description,
+          questions,
+          isPublished,
+          code: quizCode,
+        });
+        toast({
+          title: "Quiz updated",
+          description: "Your quiz has been successfully updated",
+        });
+      } else {
+        if (!user) return;
+        
+        createQuiz({
+          title,
+          description,
+          createdBy: user.id,
+          questions,
+          isPublished,
+          code: quizCode,
+        });
+        toast({
+          title: "Quiz created",
+          description: "Your quiz has been successfully created",
+        });
+      }
+      
+      navigate("/teacher-dashboard");
+    } catch (error) {
+      console.error("Error saving quiz:", error);
       toast({
-        title: "Quiz created",
-        description: "Your quiz has been successfully created",
+        title: "Error",
+        description: "Failed to save the quiz. Please try again.",
+        variant: "destructive",
       });
+    } finally {
+      setIsSubmitting(false);
     }
-    
-    navigate("/teacher-dashboard");
   };
 
   return (
@@ -205,6 +295,25 @@ const QuizCreator: React.FC = () => {
               onChange={(e) => setDescription(e.target.value)}
               rows={3}
             />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="quizCode">Quiz Code (for students to join)</Label>
+            <div className="flex gap-2">
+              <Input
+                id="quizCode"
+                placeholder="Enter quiz code"
+                value={quizCode}
+                onChange={handleQuizCodeChange}
+                className="font-mono uppercase"
+                maxLength={6}
+              />
+              <Button type="button" variant="outline" onClick={regenerateQuizCode}>
+                Regenerate
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground">
+              A unique code for students to access this quiz. 4-6 characters recommended.
+            </p>
           </div>
         </CardContent>
       </Card>
@@ -292,9 +401,18 @@ const QuizCreator: React.FC = () => {
         )}
 
         <div className="flex justify-end">
-          <Button size="lg" onClick={handleSubmit}>
-            <Save className="h-4 w-4 mr-2" />
-            {isEditing ? "Update Quiz" : "Create Quiz"}
+          <Button size="lg" onClick={handleSubmit} disabled={isSubmitting}>
+            {isSubmitting ? (
+              <>
+                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                Saving...
+              </>
+            ) : (
+              <>
+                <Save className="h-4 w-4 mr-2" />
+                {isEditing ? "Update Quiz" : "Create Quiz"}
+              </>
+            )}
           </Button>
         </div>
       </div>

@@ -18,6 +18,7 @@ import QuizIntro from "@/components/Student/QuizIntro";
 import AttemptResults from "@/components/Student/AttemptResults";
 import QuizResults from "@/components/Teacher/QuizResults";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
 
 const queryClient = new QueryClient();
 
@@ -76,6 +77,16 @@ const App = () => (
               <Routes>
                 {/* Public routes */}
                 <Route path="/" element={<RoleRedirect />} />
+
+                {/* Shared authenticated routes */}
+                <Route 
+                  path="/profile" 
+                  element={
+                    <ProtectedRoute>
+                      <Profile />
+                    </ProtectedRoute>
+                  } 
+                />
 
                 {/* Teacher routes */}
                 <Route 
