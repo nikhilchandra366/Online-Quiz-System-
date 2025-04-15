@@ -47,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="bg-stone-950">My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel className="bg-slate-50">My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <User className="h-4 w-4 mr-2" />
