@@ -1,49 +1,41 @@
-
 import React, { useState } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { LogOut, BookOpen, User, ChevronDown } from "lucide-react";
 import LogoutConfirmation from "./LogoutConfirmation";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
-
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 interface LayoutProps {
   children: React.ReactNode;
 }
-
-const Layout: React.FC<LayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
+const Layout: React.FC<LayoutProps> = ({
+  children
+}) => {
+  const {
+    user,
+    logout
+  } = useAuth();
   const navigate = useNavigate();
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
-
   const handleLogout = () => {
     setLogoutDialogOpen(true);
   };
-
   const confirmLogout = () => {
     logout();
     setLogoutDialogOpen(false);
     navigate("/");
   };
-
-  return (
-    <div className="min-h-screen flex flex-col">
+  return <div className="min-h-screen flex flex-col">
       <header className="bg-primary text-primary-foreground py-4 px-6 shadow-md">
         <div className="container mx-auto flex justify-between items-center">
-          <div className="flex items-center gap-2" onClick={() => navigate("/")} style={{ cursor: "pointer" }}>
+          <div className="flex items-center gap-2" onClick={() => navigate("/")} style={{
+          cursor: "pointer"
+        }}>
             <BookOpen className="h-6 w-6" />
             <h1 className="text-xl font-bold">QuizLink</h1>
           </div>
           
-          {user && (
-            <div className="flex items-center gap-4">
+          {user && <div className="flex items-center gap-4">
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="outline" className="flex items-center gap-2">
@@ -55,7 +47,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel>My Account</DropdownMenuLabel>
+                  <DropdownMenuLabel className="bg-stone-950">My Account</DropdownMenuLabel>
                   <DropdownMenuSeparator />
                   <DropdownMenuItem onClick={() => navigate("/profile")}>
                     <User className="h-4 w-4 mr-2" />
@@ -67,8 +59,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
-          )}
+            </div>}
         </div>
       </header>
 
@@ -82,13 +73,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         </div>
       </footer>
 
-      <LogoutConfirmation 
-        isOpen={logoutDialogOpen}
-        onClose={() => setLogoutDialogOpen(false)}
-        onConfirm={confirmLogout}
-      />
-    </div>
-  );
+      <LogoutConfirmation isOpen={logoutDialogOpen} onClose={() => setLogoutDialogOpen(false)} onConfirm={confirmLogout} />
+    </div>;
 };
-
 export default Layout;
