@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/context/AuthContext";
 import { QuizProvider } from "@/context/QuizContext";
+import { ThemeProvider } from "@/components/Theme/ThemeProvider";
 import Layout from "@/components/Layout/Layout";
 
 // Pages
@@ -71,99 +72,101 @@ const App = () => (
   <QueryClientProvider client={queryClient}>
     <BrowserRouter>
       <AuthProvider>
-        <TooltipProvider>
-          <QuizProvider>
-            <Layout>
-              <Routes>
-                {/* Public routes */}
-                <Route path="/" element={<RoleRedirect />} />
+        <ThemeProvider>
+          <TooltipProvider>
+            <QuizProvider>
+              <Layout>
+                <Routes>
+                  {/* Public routes */}
+                  <Route path="/" element={<RoleRedirect />} />
 
-                {/* Shared authenticated routes */}
-                <Route 
-                  path="/profile" 
-                  element={
-                    <ProtectedRoute>
-                      <Profile />
-                    </ProtectedRoute>
-                  } 
-                />
+                  {/* Shared authenticated routes */}
+                  <Route 
+                    path="/profile" 
+                    element={
+                      <ProtectedRoute>
+                        <Profile />
+                      </ProtectedRoute>
+                    } 
+                  />
 
-                {/* Teacher routes */}
-                <Route 
-                  path="/teacher-dashboard" 
-                  element={
-                    <ProtectedRoute allowedRole="teacher">
-                      <TeacherDashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/create-quiz" 
-                  element={
-                    <ProtectedRoute allowedRole="teacher">
-                      <QuizCreator />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/edit-quiz/:quizId" 
-                  element={
-                    <ProtectedRoute allowedRole="teacher">
-                      <QuizCreator />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/quiz-results/:quizId" 
-                  element={
-                    <ProtectedRoute allowedRole="teacher">
-                      <QuizResults />
-                    </ProtectedRoute>
-                  } 
-                />
+                  {/* Teacher routes */}
+                  <Route 
+                    path="/teacher-dashboard" 
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <TeacherDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/create-quiz" 
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <QuizCreator />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/edit-quiz/:quizId" 
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <QuizCreator />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/quiz-results/:quizId" 
+                    element={
+                      <ProtectedRoute allowedRole="teacher">
+                        <QuizResults />
+                      </ProtectedRoute>
+                    } 
+                  />
 
-                {/* Student routes */}
-                <Route 
-                  path="/student-dashboard" 
-                  element={
-                    <ProtectedRoute allowedRole="student">
-                      <StudentDashboard />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/quiz/:quizId" 
-                  element={
-                    <ProtectedRoute allowedRole="student">
-                      <QuizIntro />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/take-quiz/:attemptId" 
-                  element={
-                    <ProtectedRoute allowedRole="student">
-                      <QuizTaker />
-                    </ProtectedRoute>
-                  } 
-                />
-                <Route 
-                  path="/attempt-results/:attemptId" 
-                  element={
-                    <ProtectedRoute allowedRole="student">
-                      <AttemptResults />
-                    </ProtectedRoute>
-                  } 
-                />
+                  {/* Student routes */}
+                  <Route 
+                    path="/student-dashboard" 
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <StudentDashboard />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/quiz/:quizId" 
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <QuizIntro />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/take-quiz/:attemptId" 
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <QuizTaker />
+                      </ProtectedRoute>
+                    } 
+                  />
+                  <Route 
+                    path="/attempt-results/:attemptId" 
+                    element={
+                      <ProtectedRoute allowedRole="student">
+                        <AttemptResults />
+                      </ProtectedRoute>
+                    } 
+                  />
 
-                {/* Catch-all route */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </Layout>
-            <Toaster />
-            <Sonner />
-          </QuizProvider>
-        </TooltipProvider>
+                  {/* Catch-all route */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </Layout>
+              <Toaster />
+              <Sonner />
+            </QuizProvider>
+          </TooltipProvider>
+        </ThemeProvider>
       </AuthProvider>
     </BrowserRouter>
   </QueryClientProvider>

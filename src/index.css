@@ -79,15 +79,15 @@
 
 /* Custom styles */
 .quiz-container {
-  @apply max-w-4xl mx-auto p-6 rounded-lg shadow-md bg-white;
+  @apply max-w-4xl mx-auto p-6 rounded-lg shadow-md bg-white dark:bg-gray-800;
 }
 
 .question-card {
-  @apply bg-white rounded-lg p-6 mb-4 border border-gray-200 shadow-sm;
+  @apply bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 border border-gray-200 dark:border-gray-700 shadow-sm;
 }
 
 .option-button {
-  @apply w-full text-left p-4 border border-gray-200 rounded-md mb-2 transition-colors hover:bg-muted;
+  @apply w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-md mb-2 transition-colors hover:bg-muted dark:hover:bg-gray-700;
 }
 
 .option-button.selected {
@@ -95,5 +95,5 @@
 }
 
 .quiz-code {
-  @apply font-mono bg-muted p-2 rounded-md text-lg tracking-wider;
+  @apply font-mono bg-muted dark:bg-gray-700 p-2 rounded-md text-lg tracking-wider;
 }

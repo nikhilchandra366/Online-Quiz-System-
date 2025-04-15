@@ -5,7 +5,7 @@ import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Edit, Trash2, Eye, Share2, BarChart4 } from "lucide-react";
+import { PlusCircle, Edit, Trash2, BarChart4, Copy, Share2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { 
   Dialog,
@@ -13,23 +13,193 @@ import {
   DialogDescription,
   DialogFooter,
   DialogHeader,
-  DialogTitle,
-  DialogTrigger
+  DialogTitle
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useToast } from "@/components/ui/use-toast";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Quiz } from "@/types/quiz";
+
+// Extract QuizCard to a separate component to fix the React hooks issue
+const QuizCard = ({ quiz, onEdit, onDelete, onViewResults }: { 
+  quiz: Quiz, 
+  onEdit: (id: string) => void, 
+  onDelete: (id: string) => void, 
+  onViewResults: (id: string) => void 
+}) => {
+  const [showShareDialog, setShowShareDialog] = useState(false);
+  const { toast } = useToast();
+  const { getQuizAttempts } = useQuiz();
+
+  // Safely fetch stats
+  const [stats, setStats] = useState({
+    total: 0,
+    completed: 0,
+    avgScore: 0
+  });
+  
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const attempts = getQuizAttempts(quiz.id) || [];
+        const completedAttempts = attempts.filter(a => a.completedAt !== null) || [];
+        const avgScore = completedAttempts.length > 0
+          ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
+          : 0;
+        
+        setStats({
+          total: attempts.length,
+          completed: completedAttempts.length,
+          avgScore: Math.round(avgScore)
+        });
+      } catch (error) {
+        console.error("Error fetching stats:", error);
+      }
+    };
+
+    fetchStats();
+  }, [quiz.id, getQuizAttempts]);
+
+  const copyToClipboard = () => {
+    navigator.clipboard.writeText(quiz.code);
+    toast({
+      title: "Quiz code copied!",
+      description: "The quiz code has been copied to clipboard.",
+    });
+  };
+
+  return (
+    <Card className="overflow-hidden transition-all hover:shadow-md dark:border-gray-700">
+      <CardHeader className="pb-3 space-y-1.5">
+        <div className="flex justify-between items-start">
+          <CardTitle className="text-xl line-clamp-1">{quiz.title}</CardTitle>
+          <Badge variant={quiz.isPublished ? "default" : "outline"} className={quiz.isPublished ? "bg-secondary text-secondary-foreground" : ""}>
+            {quiz.isPublished ? "Published" : "Draft"}
+          </Badge>
+        </div>
+        <CardDescription className="line-clamp-2">
+          {quiz.description || "No description provided"}
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Quiz Code:</span>
+            <div className="flex items-center gap-1">
+              <span className="font-mono bg-muted px-2 py-1 rounded">{quiz.code}</span>
+              <Button variant="ghost" size="icon" className="h-6 w-6" onClick={copyToClipboard}>
+                <Copy className="h-3 w-3" />
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Questions:</span>
+            <span>{quiz.questions.length}</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Attempts:</span>
+            <span>{stats.total} ({stats.completed} completed)</span>
+          </div>
+          <div className="flex items-center justify-between text-sm">
+            <span className="text-muted-foreground">Avg Score:</span>
+            <span>
+              {stats.completed > 0 ? `${stats.avgScore}%` : "N/A"}
+            </span>
+          </div>
+        </div>
+      </CardContent>
+      <CardFooter className="border-t pt-4 flex justify-between gap-2 flex-wrap">
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onEdit(quiz.id)}
+            className="flex gap-1 items-center"
+          >
+            <Edit className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Edit</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onDelete(quiz.id)}
+            className="flex gap-1 items-center text-destructive border-destructive/30 hover:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Delete</span>
+          </Button>
+        </div>
+        <div className="flex space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => onViewResults(quiz.id)}
+            className="flex gap-1 items-center"
+          >
+            <BarChart4 className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Results</span>
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowShareDialog(true)}
+            className="flex gap-1 items-center"
+          >
+            <Share2 className="h-3.5 w-3.5" />
+            <span className="sr-only sm:not-sr-only sm:whitespace-nowrap">Share</span>
+          </Button>
+        </div>
+          
+        <Dialog open={showShareDialog} onOpenChange={setShowShareDialog}>
+          <DialogContent className="sm:max-w-md">
+            <DialogHeader>
+              <DialogTitle>Share Quiz</DialogTitle>
+              <DialogDescription>
+                Share this quiz code with your students.
+              </DialogDescription>
+            </DialogHeader>
+            <div className="flex items-center space-x-2 my-4">
+              <div className="grid flex-1 gap-2">
+                <p className="text-sm font-medium">Quiz Code</p>
+                <div className="flex">
+                  <Input
+                    value={quiz.code}
+                    readOnly
+                    className="font-mono text-center text-lg"
+                  />
+                  <Button 
+                    variant="secondary" 
+                    className="ml-2" 
+                    onClick={copyToClipboard}
+                  >
+                    <Copy className="h-4 w-4 mr-2" />
+                    Copy
+                  </Button>
+                </div>
+              </div>
+            </div>
+            <DialogFooter className="sm:justify-start">
+              <div className="text-sm text-muted-foreground">
+                Students can join using this code on the student dashboard.
+              </div>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      </CardFooter>
+    </Card>
+  );
+};
 
 const TeacherDashboard: React.FC = () => {
-  const { quizzes, deleteQuiz, getQuizAttempts, fetchQuizzes } = useQuiz();
+  const { quizzes, deleteQuiz, fetchQuizzes } = useQuiz();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [quizToShare, setQuizToShare] = useState<string | null>(null);
   const [deleteConfirmId, setDeleteConfirmId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [initialLoadDone, setInitialLoadDone] = useState(false);
+  const [activeTab, setActiveTab] = useState("all");
 
   useEffect(() => {
     let isMounted = true;
@@ -43,7 +213,6 @@ const TeacherDashboard: React.FC = () => {
         console.log("TeacherDashboard: No user available");
         if (isMounted) {
           setIsLoading(false);
-          setInitialLoadDone(true);
         }
         return;
       }
@@ -53,7 +222,6 @@ const TeacherDashboard: React.FC = () => {
         if (isMounted) {
           setError("You must be logged in as a teacher to view this page");
           setIsLoading(false);
-          setInitialLoadDone(true);
         }
         return;
       }
@@ -65,14 +233,12 @@ const TeacherDashboard: React.FC = () => {
         
         if (isMounted) {
           setIsLoading(false);
-          setInitialLoadDone(true);
         }
       } catch (error) {
         console.error("Error fetching quizzes:", error);
         if (isMounted) {
           setError("Failed to load quizzes. Please try again.");
           setIsLoading(false);
-          setInitialLoadDone(true);
         }
       }
     };
@@ -87,6 +253,10 @@ const TeacherDashboard: React.FC = () => {
   // Filter quizzes created by the current teacher
   const teacherQuizzes = user ? quizzes.filter(quiz => quiz.createdBy === user.id) : [];
   console.log("TeacherDashboard: Filtered quizzes:", teacherQuizzes);
+
+  // Filter by published status
+  const publishedQuizzes = teacherQuizzes.filter(quiz => quiz.isPublished);
+  const draftQuizzes = teacherQuizzes.filter(quiz => !quiz.isPublished);
 
   const handleCreateQuiz = () => {
     navigate("/create-quiz");
@@ -163,167 +333,125 @@ const TeacherDashboard: React.FC = () => {
     </div>
   );
 
+  // Display appropriate quizzes based on active tab
+  const displayQuizzes = () => {
+    if (activeTab === "published") return publishedQuizzes;
+    if (activeTab === "drafts") return draftQuizzes;
+    return teacherQuizzes;
+  };
+
+  const currentQuizzes = displayQuizzes();
+
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold">Teacher Dashboard</h1>
-        <Button onClick={handleCreateQuiz}>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold mb-2">Teacher Dashboard</h1>
+          <p className="text-muted-foreground">Manage your quizzes, view results, and track student progress</p>
+        </div>
+        <Button onClick={handleCreateQuiz} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
           <PlusCircle className="h-4 w-4 mr-2" />
           Create New Quiz
         </Button>
       </div>
 
-      {/* Show skeletons only during initial load */}
-      {!initialLoadDone && isLoading ? (
-        <QuizSkeletons />
-      ) : teacherQuizzes.length === 0 ? (
-        <Card className="text-center p-8">
-          <CardContent className="pt-6">
-            <p className="text-lg text-muted-foreground mb-4">
-              You haven't created any quizzes yet.
-            </p>
-            <Button onClick={handleCreateQuiz}>
-              <PlusCircle className="h-4 w-4 mr-2" />
-              Create Your First Quiz
-            </Button>
-          </CardContent>
-        </Card>
-      ) : (
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {teacherQuizzes.map((quiz) => {
-            // Create static stats for now to avoid errors
-            const [stats, setStats] = useState({
-              total: 0,
-              completed: 0,
-              avgScore: 0
-            });
-            
-            // Safely fetch stats
-            useEffect(() => {
-              const fetchStats = async () => {
-                try {
-                  const attempts = getQuizAttempts(quiz.id) || [];
-                  const completedAttempts = attempts.filter(a => a.completedAt !== null) || [];
-                  const avgScore = completedAttempts.length > 0
-                    ? completedAttempts.reduce((sum, a) => sum + (a.score || 0), 0) / completedAttempts.length
-                    : 0;
-                  
-                  setStats({
-                    total: attempts.length,
-                    completed: completedAttempts.length,
-                    avgScore: Math.round(avgScore)
-                  });
-                } catch (error) {
-                  console.error("Error fetching stats:", error);
-                }
-              };
+      <Tabs defaultValue="all" value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="all">All ({teacherQuizzes.length})</TabsTrigger>
+          <TabsTrigger value="published">Published ({publishedQuizzes.length})</TabsTrigger>
+          <TabsTrigger value="drafts">Drafts ({draftQuizzes.length})</TabsTrigger>
+        </TabsList>
 
-              fetchStats();
-            }, [quiz.id]);
-            
-            return (
-              <Card key={quiz.id} className="overflow-hidden">
-                <CardHeader className="pb-3">
-                  <div className="flex justify-between items-start">
-                    <CardTitle className="text-xl">{quiz.title}</CardTitle>
-                    <Badge variant={quiz.isPublished ? "default" : "outline"}>
-                      {quiz.isPublished ? "Published" : "Draft"}
-                    </Badge>
-                  </div>
-                  <CardDescription>
-                    {quiz.description || "No description provided"}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Quiz Code:</span>
-                      <span className="font-mono bg-muted px-2 py-1 rounded">
-                        {quiz.code}
-                      </span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Questions:</span>
-                      <span>{quiz.questions.length}</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Attempts:</span>
-                      <span>{stats.total} ({stats.completed} completed)</span>
-                    </div>
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-muted-foreground">Avg Score:</span>
-                      <span>
-                        {stats.completed > 0 ? `${stats.avgScore}%` : "N/A"}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-                <CardFooter className="border-t pt-4 flex justify-between">
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleEditQuiz(quiz.id)}
-                    >
-                      <Edit className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => setDeleteConfirmId(quiz.id)}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                  <div className="flex space-x-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleViewResults(quiz.id)}
-                    >
-                      <BarChart4 className="h-4 w-4" />
-                    </Button>
-                    <Dialog>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setQuizToShare(quiz.id)}
-                        >
-                          <Share2 className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent className="sm:max-w-md">
-                        <DialogHeader>
-                          <DialogTitle>Share Quiz</DialogTitle>
-                          <DialogDescription>
-                            Share this quiz code with your students.
-                          </DialogDescription>
-                        </DialogHeader>
-                        <div className="flex items-center space-x-2 my-4">
-                          <div className="grid flex-1 gap-2">
-                            <p className="text-sm font-medium">Quiz Code</p>
-                            <Input
-                              value={quiz.code}
-                              readOnly
-                              className="font-mono text-center text-lg"
-                            />
-                          </div>
-                        </div>
-                        <DialogFooter className="sm:justify-start">
-                          <div className="text-sm text-muted-foreground">
-                            Students can join using this code on the student dashboard.
-                          </div>
-                        </DialogFooter>
-                      </DialogContent>
-                    </Dialog>
-                  </div>
-                </CardFooter>
-              </Card>
-            );
-          })}
-        </div>
-      )}
+        <TabsContent value="all" className="mt-0">
+          {isLoading ? (
+            <QuizSkeletons />
+          ) : currentQuizzes.length === 0 ? (
+            <Card className="text-center p-8">
+              <CardContent className="pt-6">
+                <p className="text-lg text-muted-foreground mb-4">
+                  You haven't created any quizzes yet.
+                </p>
+                <Button onClick={handleCreateQuiz} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create Your First Quiz
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {currentQuizzes.map((quiz) => (
+                <QuizCard 
+                  key={quiz.id}
+                  quiz={quiz}
+                  onEdit={handleEditQuiz}
+                  onDelete={(id) => setDeleteConfirmId(id)}
+                  onViewResults={handleViewResults}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="published" className="mt-0">
+          {isLoading ? (
+            <QuizSkeletons />
+          ) : currentQuizzes.length === 0 ? (
+            <Card className="text-center p-8">
+              <CardContent className="pt-6">
+                <p className="text-lg text-muted-foreground mb-4">
+                  You don't have any published quizzes yet.
+                </p>
+                <Button onClick={handleCreateQuiz} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create a New Quiz
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {currentQuizzes.map((quiz) => (
+                <QuizCard 
+                  key={quiz.id}
+                  quiz={quiz}
+                  onEdit={handleEditQuiz}
+                  onDelete={(id) => setDeleteConfirmId(id)}
+                  onViewResults={handleViewResults}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="drafts" className="mt-0">
+          {isLoading ? (
+            <QuizSkeletons />
+          ) : currentQuizzes.length === 0 ? (
+            <Card className="text-center p-8">
+              <CardContent className="pt-6">
+                <p className="text-lg text-muted-foreground mb-4">
+                  You don't have any draft quizzes.
+                </p>
+                <Button onClick={handleCreateQuiz} className="bg-secondary hover:bg-secondary/90 text-secondary-foreground">
+                  <PlusCircle className="h-4 w-4 mr-2" />
+                  Create a New Quiz
+                </Button>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {currentQuizzes.map((quiz) => (
+                <QuizCard 
+                  key={quiz.id}
+                  quiz={quiz}
+                  onEdit={handleEditQuiz}
+                  onDelete={(id) => setDeleteConfirmId(id)}
+                  onViewResults={handleViewResults}
+                />
+              ))}
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
       
       {/* Delete Confirmation Dialog */}
       <Dialog open={!!deleteConfirmId} onOpenChange={() => setDeleteConfirmId(null)}>
