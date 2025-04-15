@@ -11,7 +11,7 @@ interface AuthContextType {
   isLoading: boolean;
   login: (email: string, password: string, role: UserRole) => Promise<void>;
   logout: () => void;
-  register: (name: string, email: string, password: string, role: UserRole) => Promise<void>;
+  register: (name: string, email: string, password: string, role: UserRole, metadata?: Record<string, any>) => Promise<void>;
 }
 
 const defaultContext: AuthContextType = {
@@ -55,7 +55,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 console.log("Fetching user profile data");
                 const { data, error } = await supabase
                   .from('profiles')
-                  .select('name, role')
+                  .select('name, role, metadata')
                   .eq('id', currentSession.user.id)
                   .single();
                   
@@ -77,7 +77,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                     return { 
                       ...prev, 
                       name: data.name,
-                      role: userRole
+                      role: userRole,
+                      metadata: data.metadata || {}
                     };
                   });
                 }
@@ -111,7 +112,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         // Fetch user profile data
         supabase
           .from('profiles')
-          .select('name, role')
+          .select('name, role, metadata')
           .eq('id', currentSession.user.id)
           .single()
           .then(({ data, error }) => {
@@ -134,7 +135,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                 return { 
                   ...prev, 
                   name: data.name,
-                  role: userRole
+                  role: userRole,
+                  metadata: data.metadata || {}
                 };
               });
             }
@@ -178,7 +180,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  const register = async (name: string, email: string, password: string, role: UserRole) => {
+  const register = async (name: string, email: string, password: string, role: UserRole, metadata: Record<string, any> = {}) => {
     try {
       setIsLoading(true);
       
@@ -189,6 +191,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           data: {
             name,
             role,
+            metadata
           }
         }
       });
