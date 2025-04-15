@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuiz } from "@/context/QuizContext";
@@ -14,7 +13,6 @@ import { PlusCircle, Trash2, Save, ArrowLeft, FileQuestion, Loader2 } from "luci
 import { useToast } from "@/components/ui/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 
-// Helper function to generate a random quiz code
 const generateQuizCode = () => {
   const characters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
   let result = '';
@@ -49,7 +47,6 @@ const QuizCreator: React.FC = () => {
       setIsPublished(existingQuiz.isPublished);
       setQuizCode(existingQuiz.code);
     } else {
-      // Initialize with one empty question for new quizzes
       setQuestions([
         {
           id: Math.random().toString(36).substring(2, 9),
@@ -59,15 +56,13 @@ const QuizCreator: React.FC = () => {
         },
       ]);
       
-      // Generate a random quiz code for new quizzes
       setQuizCode(generateQuizCode());
     }
   }, [existingQuiz]);
 
-  // Check if the quiz code is unique
   const checkQuizCodeUniqueness = async (code: string): Promise<boolean> => {
     if (isEditing && existingQuiz?.code === code) {
-      return true; // Same code for the same quiz is fine
+      return true;
     }
     
     try {
@@ -82,7 +77,7 @@ const QuizCreator: React.FC = () => {
         return false;
       }
       
-      return !data; // If no data, code is unique
+      return !data;
     } catch (error) {
       console.error('Error checking quiz code uniqueness:', error);
       return false;
@@ -146,7 +141,6 @@ const QuizCreator: React.FC = () => {
   };
 
   const handleSubmit = async () => {
-    // Validate quiz data
     if (!title.trim()) {
       toast({
         title: "Missing title",
@@ -165,7 +159,6 @@ const QuizCreator: React.FC = () => {
       return;
     }
 
-    // Validate all questions
     for (let i = 0; i < questions.length; i++) {
       const question = questions[i];
       
@@ -178,7 +171,6 @@ const QuizCreator: React.FC = () => {
         return;
       }
       
-      // Check if all options have content
       for (let j = 0; j < question.options.length; j++) {
         if (!question.options[j].trim()) {
           toast({
@@ -194,7 +186,6 @@ const QuizCreator: React.FC = () => {
     setIsSubmitting(true);
 
     try {
-      // Check if quiz code is unique
       const isCodeUnique = await checkQuizCodeUniqueness(quizCode);
       
       if (!isCodeUnique) {

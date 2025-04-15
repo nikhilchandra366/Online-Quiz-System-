@@ -5,6 +5,7 @@ import { User, Session } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { AppUser, UserRole } from "@/types/quiz";
 
+// Ensure AppUser type includes metadata
 interface AuthContextType {
   user: AppUser | null;
   isAuthenticated: boolean;
@@ -44,7 +45,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           const initialUser: AppUser = {
             ...currentSession.user,
             role: undefined,
-            name: undefined
+            name: undefined,
+            metadata: {} // Add metadata property
           };
           setUser(initialUser);
           
@@ -105,7 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         const initialUser: AppUser = {
           ...currentSession.user,
           role: undefined,
-          name: undefined
+          name: undefined,
+          metadata: {} // Add metadata property
         };
         setUser(initialUser);
         

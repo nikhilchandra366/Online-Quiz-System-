@@ -1,4 +1,3 @@
-
 import { User } from '@supabase/supabase-js';
 
 export interface QuizQuestion {
@@ -35,4 +34,5 @@ export type UserRole = "teacher" | "student";
 export interface AppUser extends User {
   role?: UserRole;
   name?: string;
+  metadata?: Record<string, any>;
 }
