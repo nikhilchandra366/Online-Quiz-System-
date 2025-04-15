@@ -7,7 +7,7 @@ import { useAuth } from "./AuthContext";
 interface QuizContextType {
   quizzes: Quiz[];
   attempts: QuizAttempt[];
-  createQuiz: (quiz: Omit<Quiz, "id" | "createdAt" | "code">) => Promise<void>;
+  createQuiz: (quiz: Omit<Quiz, "id" | "createdAt">) => Promise<void>;
   updateQuiz: (id: string, updates: Partial<Quiz>) => Promise<void>;
   deleteQuiz: (id: string) => Promise<void>;
   getQuizByCode: (code: string) => Promise<Quiz | undefined>;
@@ -25,7 +25,6 @@ interface QuizContextType {
 
 const QuizContext = createContext<QuizContextType | undefined>(undefined);
 
-// Generate a random quiz code
 const generateCode = () => {
   const characters = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
   let result = "";
@@ -37,7 +36,6 @@ const generateCode = () => {
   return result;
 };
 
-// Calculate score based on answers and quiz questions
 const calculateScore = (
   answers: { questionId: string; selectedOption: number }[],
   questions: QuizQuestion[]
@@ -62,7 +60,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const { toast } = useToast();
   const { user } = useAuth();
 
-  // Fetch quizzes from Supabase
   const fetchQuizzes = async () => {
     if (!user) {
       console.log("QuizContext: No user, skipping quiz fetch");
@@ -73,7 +70,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       console.log("QuizContext: Fetching quizzes for user", user.id, "with role", user.role);
       let query;
       if (user.role === 'teacher') {
-        // Teachers see all their quizzes
         query = supabase
           .from('quizzes')
           .select(`
@@ -93,7 +89,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
           `)
           .eq('created_by', user.id);
       } else {
-        // Students see only published quizzes
         query = supabase
           .from('quizzes')
           .select(`
@@ -123,7 +118,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (data) {
         console.log("QuizContext: Received quiz data", data);
-        // Transform the data to match our expected format
         const transformedQuizzes: Quiz[] = data.map((quiz: any) => ({
           id: quiz.id,
           title: quiz.title,
@@ -153,14 +147,12 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Fetch attempts from Supabase
   const fetchAttempts = async () => {
     if (!user) return;
 
     try {
       let query;
       if (user.role === 'teacher') {
-        // Teachers can see attempts for their quizzes
         query = supabase
           .from('attempts')
           .select(`
@@ -174,7 +166,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
           `)
           .in('quiz_id', quizzes.map(q => q.id));
       } else {
-        // Students can see only their attempts
         query = supabase
           .from('attempts')
           .select(`
@@ -221,7 +212,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Load data when component mounts or user changes
   useEffect(() => {
     if (user) {
       console.log("QuizContext: User changed, fetching quizzes", user);
@@ -240,7 +230,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   }, [quizzes, user]);
 
-  const createQuiz = async (quizData: Omit<Quiz, "id" | "createdAt" | "code">) => {
+  const createQuiz = async (quizData: Omit<Quiz, "id" | "createdAt">) => {
     if (!user || user.role !== 'teacher') {
       toast({
         title: "Permission Denied",
@@ -251,9 +241,8 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
 
     try {
-      const code = generateCode();
+      const code = quizData.code || generateCode();
       
-      // First, insert the quiz
       const { data: insertedQuiz, error: quizError } = await supabase
         .from('quizzes')
         .insert({
@@ -268,7 +257,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
       if (quizError) throw quizError;
       
-      // Then, insert the questions
       const questionsToInsert = quizData.questions.map((question: QuizQuestion) => ({
         quiz_id: insertedQuiz.id,
         text: question.text,
@@ -282,7 +270,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (questionsError) throw questionsError;
       
-      // Fetch the updated quiz list
       await fetchQuizzes();
       
       toast({
@@ -303,7 +290,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     if (!user || user.role !== 'teacher') return;
     
     try {
-      // Update quiz base data
       const quizUpdates: any = {};
       if (updates.title !== undefined) quizUpdates.title = updates.title;
       if (updates.description !== undefined) quizUpdates.description = updates.description;
@@ -318,9 +304,7 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (quizError) throw quizError;
       }
       
-      // If questions were updated, handle them
       if (updates.questions) {
-        // Delete existing questions
         const { error: deleteError } = await supabase
           .from('questions')
           .delete()
@@ -328,7 +312,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
           
         if (deleteError) throw deleteError;
         
-        // Insert new questions
         const questionsToInsert = updates.questions.map(q => ({
           quiz_id: id,
           text: q.text,
@@ -343,7 +326,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         if (insertError) throw insertError;
       }
       
-      // Refresh quizzes
       await fetchQuizzes();
       
       toast({
@@ -371,7 +353,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) throw error;
       
-      // Update state
       setQuizzes(prev => prev.filter(quiz => quiz.id !== id));
       
       toast({
@@ -413,7 +394,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (error) {
         if (error.code === 'PGRST116') {
-          // No rows found, not an error
           return undefined;
         }
         throw error;
@@ -459,7 +439,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
       
       const attemptId = data.id;
       
-      // Refresh attempts
       await fetchAttempts();
       
       return attemptId;
@@ -479,7 +458,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
     answers: { questionId: string; selectedOption: number }[]
   ) => {
     try {
-      // First get the attempt to find the quiz ID
       const { data: attemptData, error: attemptError } = await supabase
         .from('attempts')
         .select('quiz_id')
@@ -488,7 +466,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (attemptError) throw attemptError;
       
-      // Then get the quiz questions to calculate score
       const { data: quizData, error: quizError } = await supabase
         .from('questions')
         .select('id, correct_answer')
@@ -496,7 +473,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (quizError) throw quizError;
       
-      // Calculate score
       let correctAnswers = 0;
       answers.forEach(answer => {
         const question = quizData.find((q: any) => q.id === answer.questionId);
@@ -509,7 +485,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         ? Math.round((correctAnswers / quizData.length) * 100)
         : 0;
       
-      // Update the attempt with answers and score
       const { error: updateError } = await supabase
         .from('attempts')
         .update({
@@ -521,7 +496,6 @@ export const QuizProvider: React.FC<{ children: React.ReactNode }> = ({ children
         
       if (updateError) throw updateError;
       
-      // Refresh attempts
       await fetchAttempts();
       
       toast({

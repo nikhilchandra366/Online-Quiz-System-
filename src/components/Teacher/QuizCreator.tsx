@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useQuiz } from "@/context/QuizContext";
@@ -213,13 +214,14 @@ const QuizCreator: React.FC = () => {
       } else {
         if (!user) return;
         
+        // During creation, the code is passed to the context's createQuiz function
         createQuiz({
           title,
           description,
           createdBy: user.id,
           questions,
           isPublished,
-          code: quizCode,
+          code: quizCode, // This will be handled properly by QuizContext now
         });
         toast({
           title: "Quiz created",

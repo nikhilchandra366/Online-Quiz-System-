@@ -1,11 +1,9 @@
-
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { User, Session } from "@supabase/supabase-js";
 import { useToast } from "@/components/ui/use-toast";
 import { AppUser, UserRole } from "@/types/quiz";
 
-// Ensure AppUser type includes metadata
 interface AuthContextType {
   user: AppUser | null;
   isAuthenticated: boolean;
@@ -46,7 +44,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             ...currentSession.user,
             role: undefined,
             name: undefined,
-            metadata: {} // Add metadata property
+            metadata: {} // Initialize with empty object
           };
           setUser(initialUser);
           
@@ -80,7 +78,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                       ...prev, 
                       name: data.name || undefined,
                       role: userRole || undefined,
-                      metadata: data.metadata || {}
+                      metadata: data.metadata || {} // Ensure it's an object
                     };
                   });
                 }
@@ -108,7 +106,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
           ...currentSession.user,
           role: undefined,
           name: undefined,
-          metadata: {} // Add metadata property
+          metadata: {} // Initialize with empty object
         };
         setUser(initialUser);
         
@@ -139,7 +137,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
                   ...prev, 
                   name: data.name || undefined,
                   role: userRole || undefined,
-                  metadata: data.metadata || {}
+                  metadata: data.metadata || {} // Ensure it's an object
                 };
               });
             }
