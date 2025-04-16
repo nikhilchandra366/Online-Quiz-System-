@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
@@ -13,7 +12,7 @@ import { BookOpen, Clock, Award, ArrowRight, CheckCircle } from "lucide-react";
 const StudentDashboard = () => {
   const [quizCode, setQuizCode] = useState("");
   const { user } = useAuth();
-  const { getQuizByCode, startQuizAttempt, attempts, quizzes } = useQuiz();
+  const { getQuizByCode, attempts, quizzes } = useQuiz();
   const { toast } = useToast();
   const navigate = useNavigate();
 
@@ -34,7 +33,6 @@ const StudentDashboard = () => {
       const quiz = await getQuizByCode(quizCode.trim());
       
       if (quiz) {
-        // Navigate to quiz intro page
         navigate(`/quiz/${quiz.id}`);
       } else {
         toast({

@@ -11,8 +11,11 @@ const Index = () => {
     if (isAuthenticated) {
       if (user?.role === 'teacher') {
         navigate("/teacher-dashboard");
-      } else {
+      } else if (user?.role === 'student') {
         navigate("/student-dashboard");
+      } else {
+        // Fallback for unknown roles
+        navigate("/home");
       }
     } else {
       navigate("/home");
