@@ -49,9 +49,9 @@ const QuizAnalytics: React.FC<QuizAnalyticsProps> = ({ quizzes, attempts }) => {
           <div className="h-[350px] w-full">
             <ChartContainer 
               config={{
-                attempts: { theme: { light: "#9b87f5", dark: "#9b87f5" } },
-                completed: { theme: { light: "#33C3F0", dark: "#33C3F0" } },
-                avgScore: { theme: { light: "#6E59A5", dark: "#D6BCFA" } }
+                attempts: { theme: { light: "#7E69AB", dark: "#7E69AB" } },
+                completed: { theme: { light: "#1EAEDB", dark: "#1EAEDB" } },
+                avgScore: { theme: { light: "#F97316", dark: "#F97316" } }
               }}
             >
               <ResponsiveContainer width="100%" height="100%">
@@ -127,9 +127,9 @@ const QuizAnalytics: React.FC<QuizAnalyticsProps> = ({ quizzes, attempts }) => {
         <div className="h-[350px] w-full">
           <ChartContainer 
             config={{
-              attempts: { theme: { light: "#9b87f5", dark: "#9b87f5" } },
-              completed: { theme: { light: "#33C3F0", dark: "#33C3F0" } },
-              avgScore: { theme: { light: "#6E59A5", dark: "#D6BCFA" } }
+              attempts: { theme: { light: "#7E69AB", dark: "#7E69AB" } },
+              completed: { theme: { light: "#1EAEDB", dark: "#1EAEDB" } },
+              avgScore: { theme: { light: "#F97316", dark: "#F97316" } }
             }}
           >
             <ResponsiveContainer width="100%" height="100%">
