@@ -1,11 +1,11 @@
-import React, { useState, useEffect } from "react";
+
+import React, { useState, useEffect, useCallback } from "react";
 import { useQuiz } from "@/context/QuizContext";
 import { useAuth } from "@/context/AuthContext";
 import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
-import { PlusCircle, Edit, Trash2, BarChart4, Share2, Copy } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
+import { PlusCircle } from "lucide-react";
 import { 
   Dialog,
   DialogContent,
@@ -14,17 +14,15 @@ import {
   DialogHeader,
   DialogTitle
 } from "@/components/ui/dialog";
-import { Input } from "@/components/ui/input";
 import { useToast } from "@/components/ui/use-toast";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { DashboardSkeleton } from "./DashboardSkeleton";
 import QuizAnalytics from "./QuizAnalytics";
 import { QuizCard } from "./QuizCard";
 import { ThemeToggle } from "../Theme/ThemeToggle";
-import { Quiz } from "@/types/quiz";
 
 const TeacherDashboard: React.FC = () => {
-  const { quizzes, deleteQuiz, fetchQuizzes, attempts, getQuizAttempts } = useQuiz();
+  const { quizzes, deleteQuiz, fetchQuizzes, attempts, fetchAttempts } = useQuiz();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -33,54 +31,44 @@ const TeacherDashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState("all");
 
+  // Memoize the fetchData function to prevent unnecessary re-renders
+  const fetchData = useCallback(async () => {
+    console.log("TeacherDashboard: Loading data, user:", user);
+    
+    if (!user) {
+      console.log("TeacherDashboard: No user available");
+      setIsLoading(false);
+      return;
+    }
+    
+    if (user.role !== 'teacher') {
+      console.log("TeacherDashboard: User is not a teacher", user.role);
+      setError("You must be logged in as a teacher to view this page");
+      setIsLoading(false);
+      return;
+    }
+    
+    try {
+      console.log("TeacherDashboard: Calling fetchQuizzes");
+      await fetchQuizzes();
+      await fetchAttempts();
+      console.log("TeacherDashboard: Data fetch completed");
+      setIsLoading(false);
+    } catch (error) {
+      console.error("Error fetching data:", error);
+      setError("Failed to load dashboard data. Please try again.");
+      setIsLoading(false);
+    }
+  }, [fetchQuizzes, fetchAttempts, user]);
+
   useEffect(() => {
-    let isMounted = true;
+    // Set a shorter timeout to improve perceived performance
+    const timer = setTimeout(() => {
+      fetchData();
+    }, 100);
     
-    const loadData = async () => {
-      console.log("TeacherDashboard: Loading data, user:", user);
-      
-      if (!isMounted) return;
-      
-      if (!user) {
-        console.log("TeacherDashboard: No user available");
-        if (isMounted) {
-          setIsLoading(false);
-        }
-        return;
-      }
-      
-      if (user.role !== 'teacher') {
-        console.log("TeacherDashboard: User is not a teacher", user.role);
-        if (isMounted) {
-          setError("You must be logged in as a teacher to view this page");
-          setIsLoading(false);
-        }
-        return;
-      }
-      
-      try {
-        console.log("TeacherDashboard: Calling fetchQuizzes");
-        await fetchQuizzes();
-        console.log("TeacherDashboard: fetchQuizzes completed");
-        
-        if (isMounted) {
-          setIsLoading(false);
-        }
-      } catch (error) {
-        console.error("Error fetching quizzes:", error);
-        if (isMounted) {
-          setError("Failed to load quizzes. Please try again.");
-          setIsLoading(false);
-        }
-      }
-    };
-    
-    loadData();
-    
-    return () => {
-      isMounted = false;
-    };
-  }, [fetchQuizzes, user]);
+    return () => clearTimeout(timer);
+  }, [fetchData]);
 
   // Filter quizzes created by the current teacher
   const teacherQuizzes = user ? quizzes.filter(quiz => quiz.createdBy === user.id) : [];
@@ -123,17 +111,18 @@ const TeacherDashboard: React.FC = () => {
     }
   };
 
+  // Show a more responsive loading state
+  if (isLoading) {
+    return <DashboardSkeleton />;
+  }
+
   if (error) {
     return (
       <div className="flex flex-col items-center justify-center h-64 space-y-4">
-        <p className="text-destructive text-lg">Failed to load dashboard data</p>
-        <Button onClick={() => fetchQuizzes()}>Retry</Button>
+        <p className="text-destructive text-lg">{error}</p>
+        <Button onClick={() => fetchData()}>Retry</Button>
       </div>
     );
-  }
-
-  if (isLoading) {
-    return <DashboardSkeleton />;
   }
 
   const displayQuizzes = () => {
@@ -173,9 +162,7 @@ const TeacherDashboard: React.FC = () => {
         </TabsList>
 
         <TabsContent value="all" className="mt-0">
-          {isLoading ? (
-            <DashboardSkeleton />
-          ) : currentQuizzes.length === 0 ? (
+          {currentQuizzes.length === 0 ? (
             <Card className="text-center p-8">
               <CardContent className="pt-6">
                 <p className="text-lg text-muted-foreground mb-4">
@@ -203,9 +190,7 @@ const TeacherDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="published" className="mt-0">
-          {isLoading ? (
-            <DashboardSkeleton />
-          ) : currentQuizzes.length === 0 ? (
+          {currentQuizzes.length === 0 ? (
             <Card className="text-center p-8">
               <CardContent className="pt-6">
                 <p className="text-lg text-muted-foreground mb-4">
@@ -233,9 +218,7 @@ const TeacherDashboard: React.FC = () => {
         </TabsContent>
 
         <TabsContent value="drafts" className="mt-0">
-          {isLoading ? (
-            <DashboardSkeleton />
-          ) : currentQuizzes.length === 0 ? (
+          {currentQuizzes.length === 0 ? (
             <Card className="text-center p-8">
               <CardContent className="pt-6">
                 <p className="text-lg text-muted-foreground mb-4">
