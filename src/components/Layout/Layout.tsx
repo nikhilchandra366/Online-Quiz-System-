@@ -44,7 +44,7 @@ const Layout: React.FC<LayoutProps> = ({
           </div>
           
           <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={toggleTheme} className="rounded-full border-2 border-primary-foreground/20 hover:bg-primary-foreground/10 text-gray-950">
+            <Button variant="outline" size="icon" onClick={toggleTheme} className="rounded-full border-2 border-primary-foreground/20 hover:bg-primary-foreground/10 text-slate-50">
               {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
             </Button>
             
