@@ -33,7 +33,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 246 84% 59%;
 
-    --radius: 0.5rem;
+    --radius: 0.6rem;
   }
 
   .dark {
@@ -46,10 +46,10 @@
     --popover: 222.2 84% 4.9%;
     --popover-foreground: 210 40% 98%;
 
-    --primary: 246 84% 59%;
+    --primary: 246 70% 65%;
     --primary-foreground: 222.2 47.4% 11.2%;
 
-    --secondary: 160 84% 39%;
+    --secondary: 160 70% 45%;
     --secondary-foreground: 210 40% 98%;
 
     --accent: 35 92% 51%;
@@ -63,7 +63,7 @@
 
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
-    --ring: 246 84% 59%;
+    --ring: 246 70% 65%;
   }
 }
 
@@ -74,26 +74,68 @@
 
   body {
     @apply bg-background text-foreground;
+    font-feature-settings: "rlig" 1, "calt" 1;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply tracking-tight font-bold;
+  }
+
+  /* Modern scrollbar styling */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-muted;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-muted-foreground/30 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-muted-foreground/40;
+  }
+
+  /* Fade in animations for page transitions */
+  .fade-in {
+    @apply animate-fade-in;
+  }
+
+  /* Enhanced focus styles */
+  :focus-visible {
+    @apply outline-none ring-2 ring-ring ring-offset-2 ring-offset-background;
+  }
+}
+
+@layer utilities {
+  .glass {
+    @apply bg-background/80 backdrop-blur-sm border border-border;
   }
 }
 
 /* Custom styles */
 .quiz-container {
-  @apply max-w-4xl mx-auto p-6 rounded-lg shadow-md bg-white dark:bg-gray-800;
+  @apply max-w-4xl mx-auto p-6 rounded-lg shadow-md bg-card;
 }
 
 .question-card {
-  @apply bg-white dark:bg-gray-800 rounded-lg p-6 mb-4 border border-gray-200 dark:border-gray-700 shadow-sm;
+  @apply bg-card rounded-lg p-6 mb-4 border border-border shadow-sm;
 }
 
 .option-button {
-  @apply w-full text-left p-4 border border-gray-200 dark:border-gray-700 rounded-md mb-2 transition-colors hover:bg-muted dark:hover:bg-gray-700;
+  @apply w-full text-left p-4 border border-border rounded-md mb-2 transition-colors hover:bg-muted;
 }
 
 .option-button.selected {
-  @apply bg-primary text-primary-foreground;
+  @apply bg-primary text-primary-foreground border-primary;
 }
 
 .quiz-code {
-  @apply font-mono bg-muted dark:bg-gray-700 p-2 rounded-md text-lg tracking-wider;
+  @apply font-mono bg-muted p-2 rounded-md text-lg tracking-wider;
 }
+
+/* Add font imports */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap');

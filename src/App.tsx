@@ -10,6 +10,7 @@ import { ThemeProvider } from "@/components/Theme/ThemeProvider";
 import Layout from "@/components/Layout/Layout";
 
 // Pages
+import Home from "@/pages/Home";
 import LoginForm from "@/components/Auth/LoginForm";
 import TeacherDashboard from "@/components/Teacher/TeacherDashboard";
 import StudentDashboard from "@/components/Student/StudentDashboard";
@@ -75,93 +76,123 @@ const App = () => (
         <ThemeProvider>
           <TooltipProvider>
             <QuizProvider>
-              <Layout>
-                <Routes>
-                  {/* Public routes */}
-                  <Route path="/" element={<RoleRedirect />} />
+              <Routes>
+                {/* Public routes */}
+                <Route path="/" element={
+                  <Layout>
+                    <RoleRedirect />
+                  </Layout>
+                } />
+                
+                <Route path="/home" element={
+                  <Layout>
+                    <Home />
+                  </Layout>
+                } />
 
-                  {/* Shared authenticated routes */}
-                  <Route 
-                    path="/profile" 
-                    element={
+                {/* Shared authenticated routes */}
+                <Route 
+                  path="/profile" 
+                  element={
+                    <Layout>
                       <ProtectedRoute>
                         <Profile />
                       </ProtectedRoute>
-                    } 
-                  />
+                    </Layout>
+                  } 
+                />
 
-                  {/* Teacher routes */}
-                  <Route 
-                    path="/teacher-dashboard" 
-                    element={
+                {/* Teacher routes */}
+                <Route 
+                  path="/teacher-dashboard" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="teacher">
                         <TeacherDashboard />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/create-quiz" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/create-quiz" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="teacher">
                         <QuizCreator />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/edit-quiz/:quizId" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/edit-quiz/:quizId" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="teacher">
                         <QuizCreator />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/quiz-results/:quizId" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/quiz-results/:quizId" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="teacher">
                         <QuizResults />
                       </ProtectedRoute>
-                    } 
-                  />
+                    </Layout>
+                  } 
+                />
 
-                  {/* Student routes */}
-                  <Route 
-                    path="/student-dashboard" 
-                    element={
+                {/* Student routes */}
+                <Route 
+                  path="/student-dashboard" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="student">
                         <StudentDashboard />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/quiz/:quizId" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/quiz/:quizId" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="student">
                         <QuizIntro />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/take-quiz/:attemptId" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/take-quiz/:attemptId" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="student">
                         <QuizTaker />
                       </ProtectedRoute>
-                    } 
-                  />
-                  <Route 
-                    path="/attempt-results/:attemptId" 
-                    element={
+                    </Layout>
+                  } 
+                />
+                <Route 
+                  path="/attempt-results/:attemptId" 
+                  element={
+                    <Layout>
                       <ProtectedRoute allowedRole="student">
                         <AttemptResults />
                       </ProtectedRoute>
-                    } 
-                  />
+                    </Layout>
+                  } 
+                />
 
-                  {/* Catch-all route */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </Layout>
+                {/* Catch-all route */}
+                <Route path="*" element={
+                  <Layout>
+                    <NotFound />
+                  </Layout>
+                } />
+              </Routes>
               <Toaster />
               <Sonner />
             </QuizProvider>
